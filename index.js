@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
+const corsOptions = require("./config/corsOptions");
 const store = new MongoDBStore({
   uri: process.env.DB,
 });
@@ -12,6 +13,8 @@ const productRoute = require("./routes/productRoutes");
 const app = express();
 
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use(cors(corsOptions));
 
 store.on("error", function (error) {
   console.log(error);

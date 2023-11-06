@@ -17,6 +17,18 @@ const productSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
+    details: [
+      {
+        key: {
+          type: String,
+          required: true,
+        },
+        value: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
     discount: {
       type: Number,
       default: 0,
@@ -65,12 +77,29 @@ const productSchema = mongoose.Schema(
           "Discount price ({VALUE}) should be below or equal to regular price",
       },
     },
+    shippingDate: {
+      type: Date,
+      default: function () {
+        const defaultShippingDate = new Date();
+        defaultShippingDate.setHours(defaultShippingDate.getHours() + 24);
+        return defaultShippingDate;
+      },
+    },
     createdAt: {
       type: Date,
       default: Date.now(),
       select: false,
     },
     tags: [String],
+    productStatus: {
+      type: String,
+      enum: ["active", "outofstock", "discontinued"],
+      default: "active",
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   {
     toJSON: { virtuals: true },
@@ -94,6 +123,24 @@ productSchema.index({ category: 1 });
 productSchema.statics.findByCategory = function (categoryId) {
   return this.find({ category: categoryId });
 };
+
+productSchema.pre("save", function (next) {
+  if (!this.isNew) {
+    return next();
+  }
+
+  if (this.discount === 0) {
+    this.priceDiscount = null;
+  } else {
+    const discountPercentage = this.discount || 0;
+    const originalPrice = this.price;
+    const discountedPrice =
+      originalPrice - (originalPrice * discountPercentage) / 100;
+    this.priceDiscount = discountedPrice;
+  }
+
+  next();
+});
 
 const Product = mongoose.model("Product", productSchema);
 
