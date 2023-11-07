@@ -10,6 +10,7 @@ const store = new MongoDBStore({
 const viewRoute = require("./routes/viewRoutes");
 const productRoute = require("./routes/productRoutes");
 const userRoute = require('./routes/userRoutes');
+const cartRoute = require('./routes/cartRoutes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ store.on("error", function (error) {
 app.use("/", viewRoute);
 app.use("/api/v1/products", productRoute);
 app.use('/api/v1/users', userRoute);
+app.use('/api/v1/cart', cartRoute);
 
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on the server`, 404));
