@@ -21,6 +21,8 @@ const orderRoute = require("./routes/orderRoutes");
 const addressRoute = require("./routes/addressRoutes");
 const returnRequestRoute = require("./routes/returnRequestRoutes");
 const paymentRoute = require("./routes/paymentsRoutes");
+const countryRoute = require("./routes/countryRoutes");
+const wishlistRoute = require("./routes/wishlistRoutes");
 const AppError = require("./utils/appError");
 
 const app = express();
@@ -80,6 +82,8 @@ app.use("/api/v1/orders", orderRoute);
 app.use("/api/v1/returnRequest", returnRequestRoute);
 app.use("/api/v1/payments", paymentRoute);
 app.use("/api/v1/address", addressRoute);
+app.use("/api/v1/country", countryRoute);
+app.use("/api/v1/wishlist", wishlistRoute);
 
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on the server`, 404));
