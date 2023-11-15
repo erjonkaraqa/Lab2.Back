@@ -20,6 +20,7 @@ const cartRoute = require("./routes/cartRoutes");
 const orderRoute = require("./routes/orderRoutes");
 const addressRoute = require("./routes/addressRoutes");
 const returnRequestRoute = require("./routes/returnRequestRoutes");
+const paymentRoute = require("./routes/paymentsRoutes");
 const AppError = require("./utils/appError");
 
 const app = express();
@@ -77,6 +78,7 @@ app.use("/api/v1/users", userRoute);
 app.use("/api/v1/cart", cartRoute);
 app.use("/api/v1/orders", orderRoute);
 app.use("/api/v1/returnRequest", returnRequestRoute);
+app.use("/api/v1/payments", paymentRoute);
 app.use("/api/v1/address", addressRoute);
 
 app.all("*", (req, res, next) => {
