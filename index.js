@@ -23,6 +23,7 @@ const returnRequestRoute = require("./routes/returnRequestRoutes");
 const AppError = require("./utils/appError");
 
 const app = express();
+app.use(express.static(path.join(__dirname, "public")));
 app.use(cors(corsOptions));
 
 app.use(helmet());
@@ -30,8 +31,6 @@ app.use(helmet());
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
-
-app.use(express.static(path.join(__dirname, "public")));
 
 const limiter = rateLimit({
   max: 1000,
