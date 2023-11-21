@@ -16,6 +16,7 @@ const xss = require("xss-clean");
 const hpp = require("hpp");
 const compression = require("compression");
 
+const globalErrorHandler = require("./controllers/errorController");
 const viewRoute = require("./routes/viewRoutes");
 const productRoute = require("./routes/productRoutes");
 const userRoute = require("./routes/userRoutes");
@@ -60,7 +61,6 @@ app.use(xss());
 app.use(
   hpp({
     whitelist: [
-      "duration",
       "ratingsQuantity",
       "ratingsAverage",
       "maxGroupSize",
