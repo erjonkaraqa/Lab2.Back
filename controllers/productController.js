@@ -109,10 +109,27 @@ exports.getProduct = async (req, res) => {
 };
 
 exports.updateProduct = catchAsync(async (req, res, next) => {
-  const doc = await Product.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  console.log("req.body", req.body);
+  const price = parseFloat(req.body.price);
+  const discount = parseFloat(req.body.discount);
+  const stock = parseFloat(req.body.stock);
+
+  const discountPercentage = discount || 0;
+  const originalPrice = price;
+  const discountedPrice =
+    originalPrice - (originalPrice * discountPercentage) / 100;
+
+  const productData = {
+    ...req.body,
+    price,
+    discount,
+    stock,
+    priceDiscount: discountedPrice,
+  };
+
+  console.log("productData", productData);
+
+  const doc = await Product.findByIdAndUpdate(req.params.id, productData);
 
   if (!doc) {
     return next(new AppError("No document found with that ID", 404));
@@ -129,4 +146,19 @@ exports.createProductCategory = catchAsync(async (req, res, next) => {
   }
 
   res.status(200).json(category);
+});
+exports.findRelatedProducts = catchAsync(async (req, res, next) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    return next(new AppError("Product not found", 404));
+  }
+
+  const relatedProductIds = product.relatedProducts;
+
+  const relatedProducts = await Product.find({
+    _id: { $in: relatedProductIds },
+  });
+
+  res.status(200).json(relatedProducts);
 });

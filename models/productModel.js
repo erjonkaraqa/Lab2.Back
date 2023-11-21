@@ -69,13 +69,13 @@ const productSchema = mongoose.Schema(
     },
     priceDiscount: {
       type: Number,
-      validate: {
-        validator: function (val) {
-          return val === null || val <= this.price;
-        },
-        message:
-          "Discount price ({VALUE}) should be below or equal to regular price",
-      },
+      // validate: {
+      //   validator: function (val) {
+      //     return val === null || val <= this.price;
+      //   },
+      //   message:
+      //     "Discount price ({VALUE}) should be below or equal to regular price",
+      // },
     },
     shippingDate: {
       type: Date,
@@ -91,6 +91,12 @@ const productSchema = mongoose.Schema(
       select: false,
     },
     tags: [String],
+    relatedProducts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ],
     productStatus: {
       type: String,
       enum: ["active", "outofstock", "discontinued"],
@@ -140,6 +146,13 @@ productSchema.pre("save", function (next) {
   }
 
   next();
+});
+
+productSchema.virtual("timesAddedToCart", {
+  ref: "Cart",
+  localField: "_id",
+  foreignField: "items.product",
+  count: true,
 });
 
 const Product = mongoose.model("Product", productSchema);

@@ -47,6 +47,9 @@ const createSendToken = (user, status, res) => {
 exports.signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create(req.body);
 
+  const url = `${req.protocol}://${req.get("host")}/`;
+  await new Email(newUser, url).sendWelcome();
+
   createSendToken(newUser, 200, res);
 });
 
@@ -181,11 +184,9 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
   // send it to user email
   try {
-    const resetURL = `${req.protocol}://${req.get(
-      "host"
-    )}/api/v1/users/resetPassword/${resetToken}`;
+    const resetURL = `${req.protocol}://localhost:3000/resetPassword/${resetToken}`;
 
-    console.log("resetURL", resetURL);
+    await new Email(user, resetURL).sendPasswordReset();
 
     const message = `Forget your password? Go here ${resetURL}`;
 
@@ -216,11 +217,36 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     passwordResetExpires: { $gt: Date.now() },
   });
 
-  // If token has not expired, and there is user, set the new password
   if (!user) {
     return next(new AppError("Token in invalid or has expired", 400));
   }
-  user.password = req.body.password;
+
+  const password = req.body.password;
+
+  if (password.length < 8) {
+    return next(
+      new AppError("Password must be at least 8 characters long.", 400)
+    );
+  }
+
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    return next(
+      new AppError("Password must contain at least one special character.", 400)
+    );
+  }
+
+  if (!/\d/.test(password)) {
+    return next(
+      new AppError("Password must contain at least one number.", 400)
+    );
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return next(
+      new AppError("Password must contain at least one uppercase letter.", 400)
+    );
+  }
+  user.password = password;
   user.passwordConfirm = req.body.passwordConfirm;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
@@ -232,8 +258,6 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 exports.updateMyPassword = catchAsync(async (req, res, next) => {
   // Get user from collection
   const user = await User.findById(req.user.id).select("+password");
-  console.log("req.body", req.body);
-  console.log("user", user);
   //  check if posted current password is correct
   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
     return next(new AppError("Your current password is wrong", 401));

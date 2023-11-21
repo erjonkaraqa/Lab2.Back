@@ -6,12 +6,15 @@ const cookieParser = require("cookie-parser");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const cors = require("cors");
 const corsOptions = require("./config/corsOptions");
-const rateLimit = require("express-rate-limit");
 const store = new MongoDBStore({
   uri: process.env.DB,
 });
+const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
+const hpp = require("hpp");
+const compression = require("compression");
 
 const viewRoute = require("./routes/viewRoutes");
 const productRoute = require("./routes/productRoutes");
@@ -20,6 +23,7 @@ const cartRoute = require("./routes/cartRoutes");
 const orderRoute = require("./routes/orderRoutes");
 const addressRoute = require("./routes/addressRoutes");
 const returnRequestRoute = require("./routes/returnRequestRoutes");
+const ratingRoute = require("./routes/ratingRoutes");
 const paymentRoute = require("./routes/paymentsRoutes");
 const countryRoute = require("./routes/countryRoutes");
 const wishlistRoute = require("./routes/wishlistRoutes");
@@ -40,6 +44,7 @@ const limiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   message: "Too many requests from this IP, please try again in an hour!",
 });
+
 app.use("/api", limiter);
 
 app.use(express.json({ limit: "1mb" }));
@@ -49,9 +54,24 @@ app.use(cookieParser());
 
 app.use(mongoSanitize());
 
+app.use(compression());
+app.use(xss());
+
+app.use(
+  hpp({
+    whitelist: [
+      "duration",
+      "ratingsQuantity",
+      "ratingsAverage",
+      "maxGroupSize",
+      "difficulty",
+      "price",
+    ],
+  })
+);
+
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  //   console.log('req.headers', req.headers);
   next();
 });
 
@@ -61,7 +81,6 @@ store.on("error", function (error) {
 app.use(
   session({
     secret: process.env.REFRESH_TOKEN_SECRET,
-    // secret: process.env.REFRESH_TOKEN_SECRET,
     secret: "This is a secret",
     store: store,
     resave: false,
@@ -80,6 +99,7 @@ app.use("/api/v1/users", userRoute);
 app.use("/api/v1/cart", cartRoute);
 app.use("/api/v1/orders", orderRoute);
 app.use("/api/v1/returnRequest", returnRequestRoute);
+app.use("/api/v1/ratings", ratingRoute);
 app.use("/api/v1/payments", paymentRoute);
 app.use("/api/v1/address", addressRoute);
 app.use("/api/v1/country", countryRoute);
@@ -88,5 +108,7 @@ app.use("/api/v1/wishlist", wishlistRoute);
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on the server`, 404));
 });
+
+app.use(globalErrorHandler);
 
 module.exports = app;

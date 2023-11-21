@@ -1,21 +1,21 @@
-const Wishlist = require('../models/wishlishtModel');
-const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync');
-const User = require('../models/userModel');
-const Product = require('../models/productModel');
+const Wishlist = require("../models/wishlishtModel");
+const AppError = require("../utils/appError");
+const catchAsync = require("../utils/catchAsync");
+const User = require("../models/userModel");
+const Product = require("../models/productModel");
 
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.user._id).populate('wishlist');
+  const user = await User.findById(req.user._id).populate("wishlist");
   const userWishlist = user.wishlist;
 
   const wishlist = await Wishlist.findById(userWishlist._id).populate(
-    'products'
+    "products"
   );
   const products = wishlist.products;
 
   if (!products) {
     return next(
-      new AppError('There was something wrong getting wishlist products!', 404)
+      new AppError("There was something wrong getting wishlist products!", 404)
     );
   }
 
@@ -27,7 +27,7 @@ exports.createOne = catchAsync(async (req, res, next) => {
   const products = await Promise.all(itemIds.map((id) => Product.findById(id)));
 
   if (products.every((product) => product !== null)) {
-    const user = await User.findById(req.user._id).populate('wishlist');
+    const user = await User.findById(req.user._id).populate("wishlist");
     let wishlist = user.wishlist;
 
     if (!wishlist) {
@@ -51,26 +51,26 @@ exports.createOne = catchAsync(async (req, res, next) => {
     });
     if (productFound) {
       res.status(401).json({
-        status: 'fail',
-        message: 'This product is already in your wishlist!',
+        status: "fail",
+        message: "This product is already in your wishlist!",
       });
     } else {
       wishlist.products = [...wishlist.products, ...updatedItems];
       await wishlist.save();
 
       res.status(200).json({
-        status: 'success',
-        message: 'Product added to wishlist successfully!',
+        status: "success",
+        message: "Product added to wishlist successfully!",
         wishlist,
       });
     }
   } else {
-    return next(new AppError('One or more products was not found ', 404));
+    return next(new AppError("One or more products was not found ", 404));
   }
 });
 
 exports.deleteOne = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.user._id).populate('wishlist');
+  const user = await User.findById(req.user._id).populate("wishlist");
   const userWishlist = user.wishlist;
 
   const product = userWishlist.products.findIndex(
@@ -78,28 +78,27 @@ exports.deleteOne = catchAsync(async (req, res, next) => {
   );
 
   if (product === -1) {
-    return next(new AppError('This product is not in your wishlist!', 404));
+    return next(new AppError("This product is not in your wishlist!", 404));
   }
 
   userWishlist.products.splice(product, 1);
-  console.log('here');
   await userWishlist.save();
 
   res.status(200).json({
-    status: 'success',
-    message: 'The product removed from wishlist successfuly',
+    status: "success",
+    message: "The product removed from wishlist successfuly",
   });
 });
 
 exports.deleteAll = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.user._id).populate('wishlist');
+  const user = await User.findById(req.user._id).populate("wishlist");
   const userWishlist = user.wishlist;
 
   userWishlist.products.splice(0, userWishlist.products.length);
   await userWishlist.save();
 
   res.status(200).json({
-    status: 'success',
-    message: 'The products has been deleted!',
+    status: "success",
+    message: "The products has been deleted!",
   });
 });

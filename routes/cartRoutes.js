@@ -1,22 +1,21 @@
-const express = require('express');
-const cartController = require('../controllers/cartController');
-const authController = require('../controllers/authController');
+const express = require("express");
+const cartController = require("../controllers/cartController");
+const authController = require("../controllers/authController");
 
 const router = express.Router();
 
-router.get('/', authController.protect, cartController.getCartProducts);
-// router.get('/', authController.protect, cartController.getAllProducts);
-router.post('/addToCart', authController.protect, cartController.addToCart);
+router.get("/", authController.protect, cartController.getCartProducts);
+router.post("/addToCart", authController.protect, cartController.addToCart);
 router.delete(
-  '/:productId',
+  "/:productId",
   authController.protect,
   cartController.removeProduct
 );
 router.patch(
-  '/:productId',
+  "/:productId",
   authController.protect,
   cartController.decreaseProductQuantity
 );
-router.delete('/clear/cart', authController.protect, cartController.clearCart);
+router.delete("/clear/cart", authController.protect, cartController.clearCart);
 
 module.exports = router;
