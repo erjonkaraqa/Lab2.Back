@@ -1,12 +1,10 @@
 const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
-const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const http = require("http");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
-// const sendEmail = require('../utils/email');
+const Email = require("../utils/email");
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -56,15 +54,11 @@ exports.signup = catchAsync(async (req, res, next) => {
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
-  console.log("req.body", req.body);
-
   if (!email || !password) {
     return next(new AppError("Please provide email and password", 400));
   }
 
   const user = await User.findOne({ email }).select("+password");
-
-  console.log("user", user._id);
 
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError("Incorrect email or password", 401));
@@ -73,6 +67,7 @@ exports.login = catchAsync(async (req, res, next) => {
   req.session.userId = user._id;
   createSendToken(user, 200, res);
 });
+
 exports.logout = (req, res) => {
   // Invalidate session
   req.session.destroy((err) => {
@@ -159,7 +154,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user)) {
+    if (!roles.includes(req.user.role)) {
       return next(
         new AppError("You do not have permission to perform this action", 403)
       );
@@ -179,7 +174,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   // generate the random token
   const resetToken = user.createPasswordResetToken();
 
-  console.log("resetToken", resetToken);
   await user.save({ validateBeforeSave: false });
 
   // send it to user email
@@ -187,8 +181,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     const resetURL = `${req.protocol}://localhost:3000/resetPassword/${resetToken}`;
 
     await new Email(user, resetURL).sendPasswordReset();
-
-    const message = `Forget your password? Go here ${resetURL}`;
 
     res.status(200).json({
       status: "success",
