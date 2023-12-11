@@ -49,23 +49,20 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     "gender",
     "birthdate"
   );
+
   const updatedUser = await User.findByIdAndUpdate(req.user._id, filteredBody, {
     new: true,
     runValidators: true,
   });
-  res.status(200).json({
-    success: "success",
-    data: {
-      user: updatedUser,
-    },
-  });
+
+  res.status(200).json(updatedUser);
 });
 
 exports.getUser = catchAsync(async (req, res, next) => {
-  let query = User.findById(req.params.id);
+  let query = await User.findById(req.params.id);
 
   // if (popOptions) query = query.populate(popOptions);
-  const doc = await query;
+  const doc = query;
 
   if (!doc) {
     return next(new AppError("No document found with that ID", 404));

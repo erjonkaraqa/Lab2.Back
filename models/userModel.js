@@ -1,81 +1,76 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
+const mongoose = require("mongoose");
+const validator = require("validator");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const userSchema = mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'A user must have a name'],
+      required: [true, "A user must have a name"],
       trim: true,
       unique: true,
     },
     surname: {
-      type: 'String',
-      required: [true, 'A user must have a surname'],
+      type: "String",
+      required: [true, "A user must have a surname"],
       trim: true,
     },
     gender: {
-      type: 'String',
-      required: [true, 'A user must have a gender'],
+      type: "String",
+      // required: [true, "A user must have a gender"],
     },
     country: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Country',
-      required: [true, 'Please select a country'],
+      ref: "Country",
+      // required: [true, "Please select a country"],
     },
     city: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'City',
-      required: [true, 'Please select a city'],
+      ref: "City",
+      // required: [true, "Please select a city"],
     },
     email: {
       type: String,
       unique: true,
-      required: [true, 'Please provide your email!'],
+      required: [true, "Please provide your email!"],
       lowercase: true,
-      validate: [validator.isEmail, 'Please provide a valid email'],
+      validate: [validator.isEmail, "Please provide a valid email"],
     },
-    photo: { type: String, default: 'default.jpg' },
-    birthYear: {
-      type: Number,
-      required: [true, 'Please provide your birth year'],
-      min: 1900,
-      max: new Date().getFullYear(),
-    },
-    birthMonth: {
-      type: Number,
-      required: [true, 'Please provide your birth month'],
-      min: 1,
-      max: 12,
-    },
-    birthDay: {
-      type: Number,
-      required: [true, 'Please provide your birth day'],
-      min: 1,
-      max: 31,
+    photo: { type: String, default: "default.jpg" },
+    birthdate: {
+      type: Date,
+      validate: {
+        validator: function (value) {
+          const currentYear = new Date().getFullYear();
+          const minDate = new Date(1900, 0, 1);
+          const maxDate = new Date(currentYear, 11, 31);
+
+          return value >= minDate && value <= maxDate;
+        },
+        message: "Invalid birthdate",
+      },
     },
     role: {
       type: String,
-      enum: ['user', 'guide', 'lead-guide', 'admin'],
-      default: 'user',
+      enum: ["user", "guide", "lead-guide", "admin"],
+      default: "user",
     },
     password: {
       type: String,
-      required: [true, 'Please provide a password'],
+      required: [true, "Please provide a password"],
       minLength: 8,
       select: false,
     },
     passwordConfirm: {
       type: String,
-      required: [true, 'Please confirm your password'],
+      required: [true, "Please confirm your password"],
       validate: {
         // This only works on SAVE or CREATE!!!
         validator: function (el) {
           return el === this.password;
         },
-        message: 'Password are not the same!',
+        message: "Password are not the same!",
       },
     },
     passwordChangedAt: Date,
@@ -88,11 +83,11 @@ const userSchema = mongoose.Schema(
     },
     cart: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Cart',
+      ref: "Cart",
     },
     wishlist: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Wishlist',
+      ref: "Wishlist",
     },
   },
   {
@@ -101,8 +96,8 @@ const userSchema = mongoose.Schema(
   }
 );
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
 
   this.password = await bcrypt.hash(this.password, 12);
 
@@ -110,8 +105,8 @@ userSchema.pre('save', async function (next) {
   next();
 });
 // if its have delay while registring it in database
-userSchema.pre('save', function (next) {
-  if (!this.isModified('password') || this.isNew) return next();
+userSchema.pre("save", function (next) {
+  if (!this.isModified("password") || this.isNew) return next();
 
   this.passwordChangedAt = Date.now() - 1000;
   next();
@@ -137,12 +132,12 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 };
 
 userSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetToken = crypto.randomBytes(32).toString("hex");
 
   this.passwordResetToken = crypto
-    .createHash('sha256')
+    .createHash("sha256")
     .update(resetToken)
-    .digest('hex');
+    .digest("hex");
 
   console.log({ resetToken }, this.passwordResetToken);
 
@@ -151,6 +146,6 @@ userSchema.methods.createPasswordResetToken = function () {
   return resetToken;
 };
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;
